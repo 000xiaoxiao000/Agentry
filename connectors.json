@@ -1,0 +1,98 @@
+[
+  {
+    "id": "workbuddy",
+    "name": "WorkBuddy (codebuddy CLI)",
+    "transport": "cli",
+    "command": "/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin/codebuddy",
+    "args": [
+      "-p",
+      "{task}",
+      "--output-format",
+      "stream-json",
+      "--permission-mode",
+      "bypassPermissions"
+    ],
+    "env": {},
+    "artifact_dirs": [
+      "."
+    ],
+    "harvest_roots": [
+      "{task_dir}"
+    ],
+    "session_roots": [
+      "~/.workbuddy/projects"
+    ],
+    "output_mode": "claude-stream",
+    "capture_conversation": true,
+    "capture_log": false,
+    "note": "本机 WorkBuddy：经自带 codebuddy CLI 无头调用。产物=任务目录新/改文件 + ~/.workbuddy/projects 下会话（文件+对话）+ 最终回答。要调度另一台机器上的 WorkBuddy，复制本项并把 remote.host 改成 user@那台机器、command 改成那台机器上的 codebuddy 路径。"
+  },
+  {
+    "id": "codex",
+    "name": "OpenAI Codex (CLI)",
+    "transport": "cli",
+    "command": "codex",
+    "args": [
+      "exec",
+      "--dangerously-bypass-approvals-and-sandbox",
+      "{task}"
+    ],
+    "env": {},
+    "artifact_dirs": [
+      "."
+    ],
+    "harvest_roots": [
+      "{task_dir}"
+    ],
+    "session_roots": [
+      "~/.codex/sessions"
+    ],
+    "output_mode": "raw",
+    "capture_conversation": true,
+    "capture_log": true,
+    "note": "本机 Codex CLI。产物=任务目录新/改文件 + ~/.codex/sessions 下会话（文件+对话）+ 最终回答 + 终端输出。"
+  },
+  {
+    "id": "claude-code",
+    "name": "Claude Code (CLI)",
+    "transport": "cli",
+    "command": "claude",
+    "args": [
+      "-p",
+      "{task}",
+      "--output-format",
+      "stream-json",
+      "--yes"
+    ],
+    "env": {},
+    "artifact_dirs": [
+      "."
+    ],
+    "harvest_roots": [
+      "{task_dir}"
+    ],
+    "session_roots": [
+      "~/.claude/projects"
+    ],
+    "output_mode": "claude-stream",
+    "capture_conversation": true,
+    "capture_log": false,
+    "note": "本机 Claude Code（需先安装 claude CLI 并登录）。产物=任务目录新/改文件 + ~/.claude/projects 下会话 + stream-json result 回答。"
+  },
+  {
+    "id": "cursor",
+    "name": "Cursor (GUI)",
+    "transport": "gui",
+    "command": "cursor",
+    "args": [
+      "{workdir}"
+    ],
+    "env": {},
+    "harvest_roots": [
+      "{task_dir}"
+    ],
+    "capture_conversation": false,
+    "capture_log": false,
+    "note": "GUI 工具：无无头 --print 模式。run 会用 cursor 打开工作目录（可在下达区填「工作目录」覆盖），并监听文件变化实时收口产物；停止时兜底收割。任务说明写入 PROMPT.md。"
+  }
+]

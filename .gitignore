@@ -1,0 +1,26 @@
+# ---------- 构建产物 ----------
+/target
+/dist
+/node_modules
+
+# ---------- 运行时数据（派生数据，不是源码） ----------
+# 产物索引：扫描本机会话目录得出的派生数据，每台机器各自扫描即可。
+# 不该进版本库 —— 换台机器就是一堆陈旧条目（旧路径、旧字段、内容过时）。
+/artifacts.json
+/artifacts.json.bak*
+/tasks.json
+# 会话元信息与 token 用量的磁盘缓存（按 path+mtime 失效，重启后自动复用）
+/token-cache.json
+/head-cache.json
+
+# 连接器配置 connectors.json 是**用户设置**（跟着人走），刻意保留在版本控制里。
+# 如果你更希望它也不入库，把下面这行取消注释即可：
+# /connectors.json
+
+# ---------- Tauri 自动生成 ----------
+/src-tauri/gen
+/src-tauri/target
+
+# ---------- 系统 / 编辑器 ----------
+.DS_Store
+*.swp

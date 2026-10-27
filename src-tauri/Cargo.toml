@@ -1,0 +1,40 @@
+[package]
+name = "agentry"
+version = "0.2.0"
+description = "Agentry 中心应用：桌面 GUI + 中心 hub，聚合各机器上的 AI 工具会话与产物，并用像素办公室实时观察。"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/your-username/agentry"
+homepage = "https://github.com/your-username/agentry"
+# 这个包只有一个产品二进制，显式声明它 → `cargo run` 不会再问「跑哪个」。
+default-run = "agentry"
+
+[lib]
+# 业务逻辑放 lib，bin 只是薄壳 —— 集成测试能直接调用中心的 hub 与合并门面，
+# 不必真的开一个窗口。
+name = "agentry"
+path = "src/lib.rs"
+
+[[bin]]
+name = "agentry"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+# 共享数据层：与远端 agentry-proxy 用同一份实现，保证收录口径与字段结构一致。
+agent-core = { path = "../crates/agent-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# HMAC-SHA256 挑战应答（中心 hub + 代理 agent 双向认证）。sha2 提供 Sha256 / Digest。
+sha2 = "0.10"
+
+[features]
+# Tauri 生产构建开关：开启后 generate_context! 把 dist/ 前端资源内嵌进二进制
+# （对应 tauri-macros context.rs: `dev = cfg!(not(feature = "custom-protocol"))`）。
+# 不开的话，裸 cargo build 出的二进制 dev=true → 去连 devUrl(localhost:5173)，
+# 没有 vite 就白框 + 默认右键菜单。tauri build 会自动带此 feature；
+# 本机手动编译须加 `--features custom-protocol`。
+custom-protocol = ["tauri/custom-protocol"]

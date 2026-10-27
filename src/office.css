@@ -1,0 +1,464 @@
+/* 像素办公室 + 代理节点弹窗补充样式（独立于主题：办公室是一间暖色像素房，外框保持深色） */
+
+/* ---------- 代理节点弹窗里的在线点 ---------- */
+.dot.peer-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #7b8499;
+}
+.dot.peer-dot.on {
+  background: #3cab6e;
+  box-shadow: 0 0 0 3px rgba(60, 171, 110, 0.18);
+}
+.dot.peer-dot.off {
+  background: #6b7280;
+  opacity: 0.6;
+}
+.badge.off {
+  background: rgba(120, 130, 150, 0.2);
+  color: #aeb6c6;
+}
+
+.proxy-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted, #8b93a7);
+  line-height: 1.6;
+}
+.proxy-hint code,
+.modal-sub code {
+  background: rgba(120, 130, 160, 0.18);
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+/* ---------- 像素办公室 ---------- */
+.office-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 9, 16, 0.62);
+  z-index: 60;
+}
+.office {
+  position: fixed;
+  inset: 3vh 3vw;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  background: #10151f;
+  color: #e6ebf5;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(150, 170, 210, 0.16);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.6);
+}
+.office.hidden,
+.office-backdrop.hidden {
+  display: none;
+}
+
+/* 顶栏 */
+.office-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  background: #161c29;
+  border-bottom: 1px solid rgba(150, 170, 210, 0.12);
+}
+.office-title {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.office-title::before {
+  content: '';
+  width: 4px;
+  height: 15px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #6fd3b0, #4a7df0);
+}
+.office-sub {
+  font-size: 12px;
+  color: #93a1ba;
+  padding-left: 4px;
+}
+.office-spacer {
+  flex: 1;
+}
+
+/* 房间分类：月 / 项目 / 工具 分段选择 */
+.office-group-label {
+  font-size: 12px;
+  color: #7f8ca4;
+  margin-right: -2px;
+}
+.office-seg {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  gap: 2px;
+}
+.office-seg button {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1;
+  padding: 4px 9px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #9fadc4;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.office-seg button:hover {
+  color: #dbe6f8;
+  background: rgba(255, 255, 255, 0.08);
+}
+.office-seg button.on {
+  color: #0d1420;
+  background: #cfe2ff;
+  font-weight: 600;
+}
+
+/* 房间条：每个房间一枚 chip（名字 · 人数 · token）。
+   放这里是刻意的 —— 房间信息一旦画进画布，就一定会随缩放漂移并压到工位上。 */
+.office-rooms {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 7px 14px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: #141a27;
+  border-bottom: 1px solid rgba(150, 170, 210, 0.12);
+  scrollbar-width: thin;
+}
+.office-rooms::-webkit-scrollbar {
+  height: 6px;
+}
+.office-rooms::-webkit-scrollbar-thumb {
+  background: rgba(150, 170, 210, 0.28);
+  border-radius: 3px;
+}
+.office-rooms .rm-empty {
+  font-size: 12px;
+  color: #7f8ca4;
+}
+.rm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  max-width: 280px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(150, 170, 210, 0.18);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: #d7e0ef;
+  white-space: nowrap;
+  cursor: default;
+  transition: background 0.14s, border-color 0.14s;
+}
+.rm-chip:hover,
+.rm-chip.on {
+  background: rgba(122, 196, 255, 0.16);
+  border-color: rgba(122, 196, 255, 0.55);
+}
+.rm-chip .rm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.rm-chip b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rm-chip .rm-n {
+  color: #a9b5c9;
+  font-variant-numeric: tabular-nums;
+}
+.rm-chip .rm-busy {
+  color: #7ee2b4;
+  font-variant-numeric: tabular-nums;
+}
+.rm-chip .rm-tok {
+  color: #8492a8;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 舞台 */
+.office-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 0%, #1c2436 0%, #10151f 62%, #0c111a 100%);
+}
+#office-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+}
+
+/* 悬停卡片 */
+.office-tip {
+  position: absolute;
+  z-index: 5;
+  min-width: 180px;
+  max-width: 280px;
+  padding: 9px 11px 8px;
+  border-radius: 9px;
+  background: rgba(17, 22, 33, 0.97);
+  border: 1px solid rgba(150, 175, 220, 0.28);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  font-size: 12px;
+  line-height: 1.55;
+  pointer-events: none;
+  color: #dbe3f2;
+}
+.office-tip.hidden {
+  display: none;
+}
+.office-tip .tip-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 5px;
+}
+.office-tip .tip-icon {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  flex: none;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+.office-tip .tip-kicker {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.office-tip .tip-title {
+  font-weight: 600;
+  font-size: 12.5px;
+  color: #f3f7ff;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.office-tip .tip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #8f9cb3;
+}
+.office-tip .tip-row b {
+  font-weight: 500;
+  color: #dbe3f2;
+  text-align: right;
+}
+.office-tip .tip-row b.on {
+  color: #8ef0c6;
+}
+.office-tip .tip-path {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px dashed rgba(150, 170, 210, 0.2);
+  font-size: 11px;
+  color: #7c8aa3;
+  word-break: break-all;
+}
+
+/* 概念面板（对应 pixel-agents 的那张概念表） */
+.office-concepts {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 6;
+  width: 372px;
+  padding: 12px 14px 10px;
+  border-radius: 11px;
+  background: rgba(17, 22, 33, 0.97);
+  border: 1px solid rgba(150, 175, 220, 0.26);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
+  font-size: 12px;
+}
+.office-concepts.hidden {
+  display: none;
+}
+.cp-head {
+  font-weight: 700;
+  font-size: 12.5px;
+  color: #eaf1ff;
+  padding-bottom: 7px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid rgba(150, 170, 210, 0.16);
+}
+.cp-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 4px 0;
+  color: #93a1ba;
+}
+.cp-row b {
+  font-weight: 500;
+  color: #dde5f4;
+  text-align: right;
+}
+.cp-tip {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed rgba(150, 170, 210, 0.18);
+  font-size: 11px;
+  color: #7c8aa3;
+}
+
+/* 底栏图例 */
+.office-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 16px;
+  background: #161c29;
+  border-top: 1px solid rgba(150, 170, 210, 0.12);
+  font-size: 12px;
+  color: #c6d0e6;
+}
+.office-legend .lg-group {
+  color: #7d8ba4;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+}
+.office-legend .lg-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #c6d0e6;
+}
+.office-legend .lg-item b {
+  font-weight: 600;
+  color: #eef3ff;
+}
+.office-legend .lg-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  display: inline-block;
+}
+.office-legend .lg-bubble {
+  width: 16px;
+  height: 11px;
+  border-radius: 3px;
+  background: #fdfbf3;
+  color: #3d4a63;
+  font-style: normal;
+  font-size: 9px;
+  line-height: 11px;
+  text-align: center;
+  border: 1px solid #2b3242;
+}
+.office-legend .lg-sep {
+  width: 1px;
+  height: 12px;
+  background: rgba(150, 170, 210, 0.2);
+}
+.office-legend .lg-spacer {
+  flex: 1;
+}
+.office-legend .lg-note {
+  color: #7c8aa3;
+  font-size: 11px;
+}
+#office-help.active {
+  background: rgba(110, 155, 255, 0.22);
+  border-color: rgba(110, 155, 255, 0.5);
+}
+
+/* 「仅活跃」过滤：开启后高亮，提示当前是筛选视图 */
+#office-active.active {
+  background: rgba(60, 200, 150, 0.24);
+  border-color: rgba(60, 200, 150, 0.55);
+  color: #b6f3d6;
+}
+
+/* ---------- 架构分析浮层 ---------- */
+.office-arch {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 14, 22, 0.62);
+  backdrop-filter: blur(2px);
+}
+.office-arch-card {
+  width: min(94vw, 1040px);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.office-arch-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #20283a;
+  color: #eef3ff;
+  font-weight: 600;
+  font-size: 14px;
+}
+.office-arch-body {
+  overflow: auto;
+  padding: 16px 18px 20px;
+  background: #f7f8fa;
+}
+.office-arch-note {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #4b5563;
+  background: #eef2ff;
+  border: 1px solid #dbe2ff;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.office-arch-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+#office-arch-close {
+  color: #eef3ff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+#office-arch-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+}

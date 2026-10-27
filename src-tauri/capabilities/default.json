@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "主窗口默认能力：允许前端监听/发送核心事件（core:event），以及使用窗口、WebView、路径等核心 API。",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

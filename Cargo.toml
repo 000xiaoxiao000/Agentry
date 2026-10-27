@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+    # 中心应用：桌面 GUI + 中心 hub（监听端口，等远端代理接入）
+    "src-tauri",
+    # 远端代理应用：headless，独立安装到远端机器
+    "apps/agentry-proxy",
+    # 共享数据层：中心与远端跑的是同一份实现
+    "crates/agent-core",
+]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

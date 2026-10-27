@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI 工具调度台</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/office.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- 左：已连工具（只负责切工具）+ 历史会话 -->
+    <aside id="left">
+      <div class="brand-row">
+        <div class="brand">AI 工具调度台</div>
+        <button id="office-btn" class="ghost-btn" title="像素办公室：本机 + 所有远端代理的 AI 工具实时状况，每个会话一个小人">🏢 办公室</button>
+        <button id="proxy-btn" class="ghost-btn" title="代理节点：中心 hub + 远端代理 agent 的接入管理（取代旧 P2P 直连）">☖ 代理节点</button>
+      </div>
+      <div class="section-title sec-head" data-sec="connectors" title="点击收起 / 展开">
+        <span class="caret">▾</span><span class="sec-label">已连工具</span><span id="conn-count" class="count-pill">0</span>
+      </div>
+      <div id="connectors" class="sec-body"></div>
+      <div class="section-title sec-head" data-sec="convs" title="点击收起 / 展开">
+        <span class="caret">▾</span><span class="sec-label">历史会话</span><span id="conv-count" class="count-pill">0</span>
+      </div>
+      <div id="convs" class="sec-body"><div class="rail-empty">还没有同步到会话</div></div>
+    </aside>
+    <div class="splitter" id="split-left" title="拖动调节左栏宽度"></div>
+
+    <!-- 中：执行情况（本机 / 远程），或某个任务的对话流 -->
+    <main id="center">
+      <header id="center-head">
+        <span id="active-task-title">执行情况</span>
+        <span id="active-task-meta"></span>
+      </header>
+      <!-- 隐藏的工具选择器：仅用于高亮 / 范围切换，不再有可见的派发区 -->
+      <select id="connector-select" class="hidden"></select>
+      <div id="stream"></div>
+    </main>
+    <div class="splitter" id="split-right" title="拖动调节右栏宽度"></div>
+
+    <!-- 右：统一产物 / 跨工具对比 -->
+    <aside id="right">
+      <div class="tabs">
+        <button class="tab active" data-tab="artifacts">产物</button>
+        <button class="tab" data-tab="compare">对比</button>
+        <button id="sync-all" class="tab-action" title="同步各工具已有的全部任务 / 会话 / 产物">同步全部</button>
+      </div>
+
+      <div id="scope-bar" class="scope-bar hidden">
+        <span id="scope-label"></span>
+        <button id="scope-clear">显示全部</button>
+      </div>
+
+      <div id="artifacts-pane" class="pane">
+        <div class="filters-row">
+          <select id="filter-connector" title="按工具筛选"><option value="">全部工具</option></select>
+          <select id="filter-kind" title="按类型筛选">
+            <option value="">全部类型</option>
+            <option value="conversation">对话</option>
+            <option value="file">文件</option>
+            <option value="log">日志</option>
+          </select>
+          <select id="filter-time" title="按时间快速筛选">
+            <option value="">全部时间</option>
+            <option value="today">今天</option>
+            <option value="yesterday">昨天</option>
+            <option value="7d">近 7 天</option>
+            <option value="30d">近 30 天</option>
+          </select>
+        </div>
+        <div class="search-row">
+          <input id="artifact-search" type="text" placeholder="搜索名称 / 内容…" />
+        </div>
+        <div class="search-row search-row-2">
+          <select id="export-format" title="导出格式">
+            <option value="md">Markdown</option>
+            <option value="json">JSON</option>
+            <option value="csv">CSV</option>
+          </select>
+          <button id="export-summary" title="导出当前范围内的产物">导出</button>
+          <button id="clear-artifacts" title="清空全部产物">清空</button>
+        </div>
+        <div id="artifact-stats" class="artifact-stats"></div>
+        <div id="token-stats" class="token-stats hidden"></div>
+        <div id="artifacts"></div>
+        <div id="artifact-more"></div>
+      </div>
+
+      <div id="compare-pane" class="pane hidden">
+        <div class="compare-bar">
+          <span class="compare-hint" title="按「产物名称 + 内容」跨工具聚合：同名产物或内容完全一致的分到一组">同名 / 同内容跨工具聚合</span>
+          <span id="compare-count" class="compare-count"></span>
+          <select id="filter-time-compare" title="按时间快速筛选">
+            <option value="">全部时间</option>
+            <option value="today">今天</option>
+            <option value="yesterday">昨天</option>
+            <option value="7d">近 7 天</option>
+            <option value="30d">近 30 天</option>
+          </select>
+        </div>
+
+        <!-- 列表视图：占满整栏宽高，点一行才进详情 -->
+        <div id="cmp-list-view" class="cmp-view">
+          <div class="cmp-toolbar">
+            <div id="cmp-tabs" class="cmp-tabs"></div>
+            <div class="cmp-toolbar-row">
+              <input id="cmp-search" type="search" placeholder="搜索分组名称 / 工具…" autocomplete="off" spellcheck="false" />
+              <button id="cmp-sort" class="cmp-sort" title="切换排序方式">份数 ↓</button>
+            </div>
+          </div>
+          <div id="compare-groups"></div>
+          <div id="compare-more"></div>
+        </div>
+
+        <!-- 详情视图：独占整栏，工具用页签切换，不再挤成两栏 -->
+        <div id="cmp-detail-view" class="cmp-view hidden">
+          <div id="compare-view"></div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- 产物详情：右侧大抽屉，铺满高度，避免把产物列表和正文一起挤扁 -->
+  <div id="detail-backdrop"></div>
+  <div id="artifact-detail"></div>
+
+  <!-- 代理节点 / 像素办公室：中心 hub + 远端轻量代理 agent（取代旧 P2P） -->
+  <div id="proxy-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">代理节点 · 像素办公室</div>
+          <div class="modal-sub">
+            跨机器新架构：<b>中心</b>就是本应用（agentry），负责监听；远端机器装另一个独立应用
+            <b>agentry-proxy</b>，它主动连上来、按周期上报各 AI 工具的执行状态，中心据此聚合成「像素办公室」。
+            两个应用各装各的：远端不需要装 agentry。远端零入站端口，天然穿 NAT / 防火墙。
+          </div>
+        </div>
+        <button id="proxy-close" class="icon-btn" title="关闭">×</button>
+      </div>
+
+      <div class="form-grid">
+        <label for="hub-host">中心地址</label>
+        <input id="hub-host" value="127.0.0.1" autocomplete="off" spellcheck="false" />
+        <label for="hub-port">监听端口</label>
+        <input id="hub-port" type="number" value="47800" min="1" max="65535" />
+        <label for="hub-secret">共享密钥 <i>*</i></label>
+        <input id="hub-secret" placeholder="与代理约定同一串字符" autocomplete="off" spellcheck="false" />
+        <div class="span2 proxy-cfg-actions">
+          <button id="hub-start" class="primary">启动中心</button>
+          <button id="hub-refresh" class="ghost-btn">刷新接入</button>
+          <button id="open-office" class="ghost-btn">打开像素办公室</button>
+        </div>
+      </div>
+
+      <div id="proxy-status" class="cloud-status"></div>
+
+      <div class="proxy-list-title">已接入机器（在线 <span id="proxy-online">0</span> / 共 <span id="proxy-total">0</span>）</div>
+      <div id="proxy-list" class="p2p-list"></div>
+      <div class="proxy-hint">
+        在远端机器上装 <b>agentry-proxy</b> 即可接入（默认每 5 秒上报一次）。共享密钥两边必须一致。<br />
+        远端首次配置：<code>agentry-proxy --init --hub &lt;中心&gt;:端口 --secret &lt;密钥&gt; --name &lt;机器名&gt;</code>，
+        然后直接运行 <code>agentry-proxy</code>；要开机自启加 <code>--install-service</code>。
+      </div>
+    </div>
+  </div>
+
+  <!-- 像素办公室：本机 + 所有远端代理的实时状况，每个会话一个小人 -->
+  <div id="office-backdrop" class="office-backdrop hidden"></div>
+  <div id="office" class="office hidden">
+    <div class="office-bar">
+      <span class="office-title">像素办公室</span>
+      <span id="office-sub" class="office-sub"></span>
+      <span class="office-spacer"></span>
+      <span class="office-group-label">分类</span>
+      <div id="office-group" class="office-seg">
+        <button data-group="project" class="on" title="每个真实项目一间房（推荐：房间名就是项目名）">项目</button>
+        <button data-group="month" title="时间戳工作区按月份归并（想按时间看活动时用）">月</button>
+        <button data-group="tool" title="每个 AI 工具一间大办公室">工具</button>
+      </div>
+      <button id="office-active" class="mini ghost-btn" title="只显示正在工作 / 1 小时内有活动的会话（人多时降噪）">仅活跃</button>
+      <button id="office-help" class="mini ghost-btn" title="这一屏对应 pixel-agents 的哪些概念">概念</button>
+      <button id="office-arch-btn" class="mini ghost-btn" title="agentry 的分层架构分析">架构</button>
+      <button id="office-refresh" class="mini ghost-btn" title="立即重新拉取状态">刷新</button>
+      <button id="office-close" class="icon-btn" title="关闭（Esc）">×</button>
+    </div>
+    <!-- 房间条：每个房间一枚 chip（房间名 · 人数 · token）。
+         刻意放在画布**外面**：画布里的文字是固定屏幕像素、而场景随缩放变化，
+         两者算不齐时就会压到第一排工位的小人和显示器上。 -->
+    <div id="office-rooms" class="office-rooms"></div>
+    <div id="office-stage" class="office-stage">
+      <canvas id="office-canvas"></canvas>
+      <div id="office-tip" class="office-tip hidden"></div>
+      <div id="office-concepts" class="office-concepts hidden"></div>
+    </div>
+    <div id="office-legend" class="office-legend"></div>
+  </div>
+
+  <!-- 架构分析浮层：把 agentry 的分层架构图（外壳/工具层/内核/模型 + 记忆·技能）直接呈现 -->
+  <div id="office-arch" class="office-arch hidden">
+    <div class="office-arch-card">
+      <div class="office-arch-head">
+        <span>agentry · 分层架构分析</span>
+        <button id="office-arch-close" class="icon-btn" title="关闭（Esc）">×</button>
+      </div>
+      <div class="office-arch-body">
+        <p class="office-arch-note">
+          虚线框内是真正“智能”的部分（可直接复用 Codex harness 的 agent loop）；其余三层（桌面外壳、工具适配层、模型接入）
+          是把它做成桌面产品时需要补的工程层。右侧的“记忆系统”与“技能/插件”是让工具从“代码 agent”升级为“通用生产力 agent”的关键。
+        </p>
+        <svg viewBox="0 0 980 720" xmlns="http://www.w3.org/2000/svg" class="office-arch-svg" font-family="-apple-system, 'PingFang SC', sans-serif">
+          <rect x="0" y="0" width="980" height="720" fill="#f7f8fa" />
+          <rect x="30" y="80" width="630" height="120" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5" />
+          <text x="48" y="106" font-size="14" font-weight="700" fill="#4338ca">① 桌面外壳 Desktop Shell（Tauri / WebView）</text>
+          <g font-size="12" fill="#1e3a8a">
+            <rect x="45" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="115" y="150" text-anchor="middle">Chat UI（对话）</text>
+            <rect x="199" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="269" y="150" text-anchor="middle">画布 / Artifacts</text>
+            <rect x="353" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="423" y="150" text-anchor="middle">文件树</text>
+            <rect x="507" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="577" y="150" text-anchor="middle">工具面板</text>
+          </g>
+          <rect x="30" y="220" width="630" height="120" rx="14" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.5" />
+          <text x="48" y="246" font-size="14" font-weight="700" fill="#0e7490">② 工具适配层 Tool Adapter（harness 与真实世界的接口）</text>
+          <g font-size="12" fill="#155e75">
+            <rect x="45" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="115" y="290" text-anchor="middle">shell_exec</text>
+            <rect x="199" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="269" y="290" text-anchor="middle">file_read / write</text>
+            <rect x="353" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="423" y="290" text-anchor="middle">文生图 / 视频</text>
+            <rect x="507" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="577" y="290" text-anchor="middle">Office / 浏览器 / 连接器</text>
+          </g>
+          <rect x="30" y="360" width="630" height="120" rx="14" fill="#f0fdf4" stroke="#22c55e" stroke-width="2" />
+          <text x="48" y="386" font-size="14" font-weight="700" fill="#15803d">③ Agent Core＝harness 本体（Codex loop 可直接复用）</text>
+          <g font-size="12" fill="#166534">
+            <rect x="45" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="115" y="430" text-anchor="middle">Agent Loop</text>
+            <text x="115" y="446" text-anchor="middle" font-size="10" fill="#64748b">规划 / 反思</text>
+            <rect x="199" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="269" y="430" text-anchor="middle">工具调用分发</text>
+            <rect x="353" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="423" y="430" text-anchor="middle">沙箱 &amp; 审批</text>
+            <rect x="507" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="577" y="430" text-anchor="middle">上下文管理</text>
+          </g>
+          <rect x="30" y="500" width="630" height="100" rx="14" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.5" />
+          <text x="48" y="526" font-size="14" font-weight="700" fill="#b45309">④ 模型接入 Model API（可插拔）</text>
+          <g font-size="12" fill="#92400e">
+            <rect x="45" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="115" y="567" text-anchor="middle">OpenAI / 兼容</text>
+            <rect x="199" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="269" y="567" text-anchor="middle">本地模型 Ollama</text>
+            <rect x="353" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="423" y="567" text-anchor="middle">私有部署</text>
+            <rect x="507" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="577" y="567" text-anchor="middle">…可扩展</text>
+          </g>
+          <line x1="16" y1="95" x2="16" y2="585" stroke="#94a3b8" stroke-width="2" />
+          <polygon points="16,590 11,578 21,578" fill="#94a3b8" />
+          <polygon points="16,90 11,102 21,102" fill="#94a3b8" />
+          <text x="14" y="345" font-size="11" fill="#64748b" transform="rotate(-90 14 345)" text-anchor="middle">调用链（任务 ↓ / 结果 ↑）</text>
+          <rect x="685" y="80" width="265" height="520" rx="14" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5" />
+          <text x="703" y="106" font-size="14" font-weight="700" fill="#7e22ce">跨层能力（让它“通用”）</text>
+          <rect x="703" y="124" width="229" height="180" rx="10" fill="#ffffff" stroke="#a855f7" />
+          <text x="717" y="148" font-size="13" font-weight="700" fill="#7e22ce">记忆系统 Memory</text>
+          <text x="717" y="174" font-size="12" fill="#581c87">• 长期记忆（用户偏好 / 习惯）</text>
+          <text x="717" y="198" font-size="12" fill="#581c87">• 工作区记忆（项目上下文）</text>
+          <text x="717" y="222" font-size="12" fill="#581c87">• 对话检索（跨会话召回）</text>
+          <text x="717" y="252" font-size="12" fill="#64748b">让 agent 有连续性与“记得你”</text>
+          <rect x="703" y="324" width="229" height="180" rx="10" fill="#ffffff" stroke="#a855f7" />
+          <text x="717" y="348" font-size="13" font-weight="700" fill="#7e22ce">技能 / 插件 Skills</text>
+          <text x="717" y="374" font-size="12" fill="#581c87">• 领域专家（100+ 专家包）</text>
+          <text x="717" y="398" font-size="12" fill="#581c87">• 连接器（企微 / 知识星球 / 云）</text>
+          <text x="717" y="422" font-size="12" fill="#581c87">• 自动化 / 定时任务</text>
+          <text x="717" y="452" font-size="12" fill="#64748b">让单点 loop 变成生产力平台</text>
+          <line x1="660" y1="200" x2="685" y2="200" stroke="#c4b5fd" stroke-width="2" stroke-dasharray="4 3" />
+          <line x1="660" y1="420" x2="685" y2="420" stroke="#c4b5fd" stroke-width="2" stroke-dasharray="4 3" />
+          <text x="672" y="318" font-size="10" fill="#a855f7" transform="rotate(90 672 318)" text-anchor="middle">贯穿各层</text>
+          <g font-size="12" fill="#374151">
+            <rect x="30" y="650" width="14" height="14" rx="3" fill="#eef2ff" stroke="#6366f1" />
+            <text x="50" y="662">外壳</text>
+            <rect x="120" y="650" width="14" height="14" rx="3" fill="#ecfeff" stroke="#06b6d4" />
+            <text x="140" y="662">工具层</text>
+            <rect x="210" y="650" width="14" height="14" rx="3" fill="#f0fdf4" stroke="#22c55e" />
+            <text x="230" y="662">harness 本体</text>
+            <rect x="330" y="650" width="14" height="14" rx="3" fill="#fff7ed" stroke="#f59e0b" />
+            <text x="350" y="662">模型接入</text>
+            <rect x="440" y="650" width="14" height="14" rx="3" fill="#faf5ff" stroke="#a855f7" />
+            <text x="460" y="662">跨层能力</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Agentry logo">
+  <title>Agentry</title>
+  <desc>Connected A: a bold electric-cyan letter A on an obsidian rounded square, linked by a horizontal signal line to a remote node on its right — symbolizing a cross-machine AI agent command center.</desc>
+
+  <!-- 背景：近黑圆角方块 -->
+  <rect x="0" y="0" width="512" height="512" rx="102" ry="102" fill="#101114"/>
+
+  <!-- 品牌字母 A（电光青，粗体） -->
+  <text x="232" y="356"
+        font-family="Arial, Helvetica, sans-serif" font-weight="700"
+        font-size="440" text-anchor="middle" fill="#4FD1C5">A</text>
+
+  <!-- 创意元素：A 右侧中部的水平信号线 + 远端节点 -->
+  <g stroke="#4FD1C5" fill="none" stroke-width="11" stroke-linecap="round">
+    <line x1="392" y1="306" x2="452" y2="306"/>
+  </g>
+  <circle cx="470" cy="306" r="21" fill="none" stroke="#4FD1C5" stroke-width="7"/>
+  <circle cx="470" cy="306" r="10" fill="#4FD1C5"/>
+</svg>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <title>像素办公室 · 预览</title>
+  <link rel="stylesheet" href="/style.css" />
+  <link rel="stylesheet" href="/office.css" />
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #0b0f17; }
+    /* 预览页默认模拟 1440×900 的窗口；加 ?fit=1 时跟随视口，
+       这样在窄浏览器里也能看全整个办公室（缩放由画布的 z 自动处理）。 */
+    body { width: 1440px; height: 900px; overflow: hidden; }
+    body.fit { width: 100vw; height: 100vh; }
+    #office { position: absolute; inset: 0; width: 1440px; height: 900px; border-radius: 0; }
+    body.fit #office { width: 100vw; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="office-backdrop" class="office-backdrop hidden"></div>
+  <div id="office" class="office hidden">
+    <div class="office-bar">
+      <span class="office-title">像素办公室</span>
+      <span id="office-sub" class="office-sub"></span>
+      <span class="office-spacer"></span>
+      <span class="office-group-label">分类</span>
+      <div id="office-group" class="office-seg">
+        <button data-group="project" class="on" title="每个真实项目一间房（推荐：房间名就是项目名）">项目</button>
+        <button data-group="month" title="时间戳工作区按月份归并（想按时间看活动时用）">月</button>
+        <button data-group="tool" title="每个 AI 工具一间大办公室">工具</button>
+      </div>
+      <button id="office-active" class="mini ghost-btn">仅活跃</button>
+      <button id="office-help" class="mini ghost-btn">概念</button>
+      <button id="office-arch-btn" class="mini ghost-btn">架构</button>
+      <button id="office-refresh" class="mini ghost-btn">刷新</button>
+      <button id="office-close" class="icon-btn">×</button>
+    </div>
+    <div id="office-rooms" class="office-rooms"></div>
+    <div id="office-stage" class="office-stage">
+      <canvas id="office-canvas"></canvas>
+      <div id="office-tip" class="office-tip hidden"></div>
+      <div id="office-concepts" class="office-concepts hidden"></div>
+    </div>
+    <div id="office-legend" class="office-legend"></div>
+  </div>
+
+  <!-- 架构分析浮层 -->
+  <div id="office-arch" class="office-arch hidden">
+    <div class="office-arch-card">
+      <div class="office-arch-head">
+        <span>agentry · 分层架构分析</span>
+        <button id="office-arch-close" class="icon-btn" title="关闭（Esc）">×</button>
+      </div>
+      <div class="office-arch-body">
+        <p class="office-arch-note">
+          虚线框内是真正“智能”的部分（可直接复用 Codex harness 的 agent loop）；其余三层（桌面外壳、工具适配层、模型接入）
+          是把它做成桌面产品时需要补的工程层。右侧的“记忆系统”与“技能/插件”是让工具从“代码 agent”升级为“通用生产力 agent”的关键。
+        </p>
+        <svg viewBox="0 0 980 720" xmlns="http://www.w3.org/2000/svg" class="office-arch-svg" font-family="-apple-system, 'PingFang SC', sans-serif">
+          <rect x="0" y="0" width="980" height="720" fill="#f7f8fa" />
+          <rect x="30" y="80" width="630" height="120" rx="14" fill="#eef2ff" stroke="#6366f1" stroke-width="1.5" />
+          <text x="48" y="106" font-size="14" font-weight="700" fill="#4338ca">① 桌面外壳 Desktop Shell（Tauri / WebView）</text>
+          <g font-size="12" fill="#1e3a8a">
+            <rect x="45" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="115" y="150" text-anchor="middle">Chat UI（对话）</text>
+            <rect x="199" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="269" y="150" text-anchor="middle">画布 / Artifacts</text>
+            <rect x="353" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="423" y="150" text-anchor="middle">文件树</text>
+            <rect x="507" y="120" width="140" height="50" rx="8" fill="#ffffff" stroke="#6366f1" />
+            <text x="577" y="150" text-anchor="middle">工具面板</text>
+          </g>
+          <rect x="30" y="220" width="630" height="120" rx="14" fill="#ecfeff" stroke="#06b6d4" stroke-width="1.5" />
+          <text x="48" y="246" font-size="14" font-weight="700" fill="#0e7490">② 工具适配层 Tool Adapter（harness 与真实世界的接口）</text>
+          <g font-size="12" fill="#155e75">
+            <rect x="45" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="115" y="290" text-anchor="middle">shell_exec</text>
+            <rect x="199" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="269" y="290" text-anchor="middle">file_read / write</text>
+            <rect x="353" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="423" y="290" text-anchor="middle">文生图 / 视频</text>
+            <rect x="507" y="260" width="140" height="50" rx="8" fill="#ffffff" stroke="#06b6d4" />
+            <text x="577" y="290" text-anchor="middle">Office / 浏览器 / 连接器</text>
+          </g>
+          <rect x="30" y="360" width="630" height="120" rx="14" fill="#f0fdf4" stroke="#22c55e" stroke-width="2" />
+          <text x="48" y="386" font-size="14" font-weight="700" fill="#15803d">③ Agent Core＝harness 本体（Codex loop 可直接复用）</text>
+          <g font-size="12" fill="#166534">
+            <rect x="45" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="115" y="430" text-anchor="middle">Agent Loop</text>
+            <text x="115" y="446" text-anchor="middle" font-size="10" fill="#64748b">规划 / 反思</text>
+            <rect x="199" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="269" y="430" text-anchor="middle">工具调用分发</text>
+            <rect x="353" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="423" y="430" text-anchor="middle">沙箱 &amp; 审批</text>
+            <rect x="507" y="400" width="140" height="50" rx="8" fill="#ffffff" stroke="#22c55e" />
+            <text x="577" y="430" text-anchor="middle">上下文管理</text>
+          </g>
+          <rect x="30" y="500" width="630" height="100" rx="14" fill="#fff7ed" stroke="#f59e0b" stroke-width="1.5" />
+          <text x="48" y="526" font-size="14" font-weight="700" fill="#b45309">④ 模型接入 Model API（可插拔）</text>
+          <g font-size="12" fill="#92400e">
+            <rect x="45" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="115" y="567" text-anchor="middle">OpenAI / 兼容</text>
+            <rect x="199" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="269" y="567" text-anchor="middle">本地模型 Ollama</text>
+            <rect x="353" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="423" y="567" text-anchor="middle">私有部署</text>
+            <rect x="507" y="540" width="140" height="44" rx="8" fill="#ffffff" stroke="#f59e0b" />
+            <text x="577" y="567" text-anchor="middle">…可扩展</text>
+          </g>
+          <line x1="16" y1="95" x2="16" y2="585" stroke="#94a3b8" stroke-width="2" />
+          <polygon points="16,590 11,578 21,578" fill="#94a3b8" />
+          <polygon points="16,90 11,102 21,102" fill="#94a3b8" />
+          <text x="14" y="345" font-size="11" fill="#64748b" transform="rotate(-90 14 345)" text-anchor="middle">调用链（任务 ↓ / 结果 ↑）</text>
+          <rect x="685" y="80" width="265" height="520" rx="14" fill="#faf5ff" stroke="#a855f7" stroke-width="1.5" />
+          <text x="703" y="106" font-size="14" font-weight="700" fill="#7e22ce">跨层能力（让它“通用”）</text>
+          <rect x="703" y="124" width="229" height="180" rx="10" fill="#ffffff" stroke="#a855f7" />
+          <text x="717" y="148" font-size="13" font-weight="700" fill="#7e22ce">记忆系统 Memory</text>
+          <text x="717" y="174" font-size="12" fill="#581c87">• 长期记忆（用户偏好 / 习惯）</text>
+          <text x="717" y="198" font-size="12" fill="#581c87">• 工作区记忆（项目上下文）</text>
+          <text x="717" y="222" font-size="12" fill="#581c87">• 对话检索（跨会话召回）</text>
+          <text x="717" y="252" font-size="12" fill="#64748b">让 agent 有连续性与“记得你”</text>
+          <rect x="703" y="324" width="229" height="180" rx="10" fill="#ffffff" stroke="#a855f7" />
+          <text x="717" y="348" font-size="13" font-weight="700" fill="#7e22ce">技能 / 插件 Skills</text>
+          <text x="717" y="374" font-size="12" fill="#581c87">• 领域专家（100+ 专家包）</text>
+          <text x="717" y="398" font-size="12" fill="#581c87">• 连接器（企微 / 知识星球 / 云）</text>
+          <text x="717" y="422" font-size="12" fill="#581c87">• 自动化 / 定时任务</text>
+          <text x="717" y="452" font-size="12" fill="#64748b">让单点 loop 变成生产力平台</text>
+          <line x1="660" y1="200" x2="685" y2="200" stroke="#c4b5fd" stroke-width="2" stroke-dasharray="4 3" />
+          <line x1="660" y1="420" x2="685" y2="420" stroke="#c4b5fd" stroke-width="2" stroke-dasharray="4 3" />
+          <text x="672" y="318" font-size="10" fill="#a855f7" transform="rotate(90 672 318)" text-anchor="middle">贯穿各层</text>
+          <g font-size="12" fill="#374151">
+            <rect x="30" y="650" width="14" height="14" rx="3" fill="#eef2ff" stroke="#6366f1" />
+            <text x="50" y="662">外壳</text>
+            <rect x="120" y="650" width="14" height="14" rx="3" fill="#ecfeff" stroke="#06b6d4" />
+            <text x="140" y="662">工具层</text>
+            <rect x="210" y="650" width="14" height="14" rx="3" fill="#f0fdf4" stroke="#22c55e" />
+            <text x="230" y="662">harness 本体</text>
+            <rect x="330" y="650" width="14" height="14" rx="3" fill="#fff7ed" stroke="#f59e0b" />
+            <text x="350" y="662">模型接入</text>
+            <rect x="440" y="650" width="14" height="14" rx="3" fill="#faf5ff" stroke="#a855f7" />
+            <text x="460" y="662">跨层能力</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { openOffice, setOfficeSource } from '/office.js';
+
+    if (new URLSearchParams(location.search).get('fit') === '1') {
+      document.body.classList.add('fit');
+    }
+    const now = Math.floor(Date.now() / 1000);
+    // project = 后端算好的真实项目名（办公室的房间名用它）
+    const mk = (id, ws, title, act, busy, ago, project) => ({
+      id, workspace: ws, title, act, busy, last: now - ago,
+      cwd: `/Users/xiaoxiao/WorkBuddy/${ws}`,
+      project: project || '',
+    });
+
+    // 真实数据里 WorkBuddy 每段对话都在一个带时间戳的工作区目录下（本机 200+ 个），
+    // 所以这里照实模拟：每个工作区还带一个「真实项目名」（后端算出来的），
+    // 办公室的房间名用它，而不是「2026年8月」这种日期。
+    const W2 = 'Users-xiaoxiao-WorkBuddy-agentry';
+    const W3 = 'personal-JavaProject';
+    const D1 = 'Users-xiaoxiao-WorkBuddy-2026-08-08-12-25-23';
+    const D2 = 'Users-xiaoxiao-WorkBuddy-2026-08-10-16-04-40';
+    const D3 = 'Users-xiaoxiao-WorkBuddy-2026-08-27-09-12-00';
+    const D4 = 'Users-xiaoxiao-WorkBuddy-2026-09-18-20-41-07';
+    const D5 = 'Users-xiaoxiao-WorkBuddy-2026-09-27-11-32-14';
+    const D6 = 'Users-xiaoxiao-WorkBuddy-2026-10-02-08-15-51';
+    const D7 = 'Users-xiaoxiao-WorkBuddy-2026-10-12-19-04-22';
+
+    const data = [
+      {
+        name: '本机', online: true,
+        tools: [
+          {
+            connector: 'workbuddy', name: 'WorkBuddy (codebuddy CLI)', sessions: 452, running: 3,
+            recent: [
+              mk('a1', D1, '重写像素办公室的渲染层，参考 pixel-agents', 'writing', true, 12, 'agentry'),
+              mk('a2', D2, '分析远程代理 agent 接入方案', 'thinking', true, 90, 'agentry'),
+              mk('a3', D2, '清理旧 P2P 后端命令', 'tooling', true, 40, 'agentry'),
+              mk('a4', D3, '整理知识星球 IT 资讯快稿', 'idle', false, 3600, 'ai-native-sdlc-zsxq'),
+              mk('a5', D4, '把 hub/proxy 拆成独立模块', 'writing', true, 320, 'agentry'),
+              mk('a6', D5, '核对 Cursor 会话条目字段', 'thinking', false, 7200, 'open-platform-zsxq'),
+              mk('a7', D6, '给中栏执行视图加行内筛选', 'writing', true, 150, 'agentry'),
+              mk('a8', D7, '修 macOS WebView confirm 空实现', 'waiting', true, 600, 'agentry'),
+              mk('a9', W2, '给 Tauri 应用加代理节点面板', 'writing', true, 200, 'agentry'),
+              mk('a10', W3, '新建 test001 目录并跑通单测', 'thinking', true, 2400, 'oAccurateTest'),
+            ],
+          },
+          {
+            connector: 'codex', name: 'OpenAI Codex (CLI)', sessions: 17, running: 1,
+            recent: [
+              mk('b1', W2, '把 cargo check 警告清零', 'tooling', true, 70, 'agentry'),
+              mk('b2', D6, '补 CLI 参数解析的边界用例', 'idle', false, 9000, 'agentry'),
+            ],
+          },
+          {
+            connector: 'claude-code', name: 'Claude Code (CLI)', sessions: 6, running: 0,
+            recent: [
+              mk('c1', W3, '重构 Java agent 启动逻辑', 'idle', false, 1800, 'oAccurateTest'),
+              mk('c2', D3, '补一段 session tail 解析', 'idle', false, 5400, 'ai-native-sdlc-zsxq'),
+            ],
+          },
+          {
+            connector: 'cursor', name: 'Cursor (GUI)', sessions: 12, running: 1,
+            recent: [mk('d1', W3, '补 HomeController 的接口文档', 'writing', true, 130, 'oAccurateTest')],
+          },
+        ],
+      },
+      {
+        name: 'Mac-mini-2', online: true,
+        tools: [
+          {
+            connector: 'workbuddy', name: 'WorkBuddy (codebuddy CLI)', sessions: 40, running: 1,
+            recent: [mk('f1', W2, '远端：跑一遍端到端回归', 'tooling', true, 25, 'agentry')],
+          },
+        ],
+      },
+    ];
+
+    // 压力测试：?n=800&rooms=40 生成大量会话（同一模块实例，量性能用）
+    const qs = new URLSearchParams(location.search);
+    const N = Number(qs.get('n') || 0);
+    const ROOMS = Number(qs.get('rooms') || 40);
+    if (N > 0) {
+      const acts = ['writing', 'thinking', 'tooling', 'waiting', 'idle'];
+      const tools = [
+        { connector: 'workbuddy', name: 'WorkBuddy (codebuddy CLI)' },
+        { connector: 'codex', name: 'OpenAI Codex (CLI)' },
+        { connector: 'claude-code', name: 'Claude Code (CLI)' },
+        { connector: 'cursor', name: 'Cursor (GUI)' },
+      ];
+      const per = Math.ceil(N / ROOMS);
+      const byTool = new Map();
+      for (let r = 0; r < ROOMS; r++) {
+        for (let i = 0; i < per; i++) {
+          const t = tools[(r + i) % tools.length];
+          if (!byTool.has(t.connector)) byTool.set(t.connector, { ...t, recent: [] });
+          byTool.get(t.connector).recent.push(
+            mk(`s-${r}-${i}`, `project-${r}`, `压力测试会话 ${r}-${i}`, acts[(r + i) % acts.length], i % 2 === 0, i * 60, `project-${r}`),
+          );
+        }
+      }
+      data.length = 0;
+      data.push({ name: '本机', online: true, tools: [...byTool.values()] });
+    }
+
+    setOfficeSource(async () => data);
+    openOffice();
+    window.__officeData = data;
+  </script>
+</body>
+</html>
