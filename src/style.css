@@ -38,6 +38,8 @@ body {
 #app {
   display: grid;
   /* 三栏宽度都可拖拽调节；未设置时用默认值（右栏按视口自适应，避免卡片被压扁） */
+  --left-w: 236px;
+  --right-w: clamp(420px, 36vw, 560px);
   grid-template-columns:
     var(--left-w, 236px) 6px minmax(0, 1fr) 6px
     var(--right-w, clamp(420px, 36vw, 560px));
@@ -46,6 +48,8 @@ body {
 }
 @media (max-width: 1180px) {
   #app {
+    --left-w: 210px;
+    --right-w: 420px;
     grid-template-columns:
       var(--left-w, 210px) 6px minmax(0, 1fr) 6px var(--right-w, 420px);
   }
