@@ -176,7 +176,4 @@ node scripts/e2e-two-apps.mjs                # 真实双进程联调（真的跑
 
 ## 许可证提醒
 
-早期版本基于 OpenAI 官方 `codex` CLI 二次开发；当前 `crates/agent-core` 为自写实现，
-仅借鉴其 agent-loop 思想，规避上游许可证问题。
-
 本项目（当前自写实现）以 **MIT 许可证**发布，详见 [LICENSE](./LICENSE)。
